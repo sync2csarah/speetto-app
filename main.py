@@ -6,7 +6,7 @@ from typing import Optional
 app = FastAPI(title="스피또 명당 API")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
-DB_PATH = "../crawler/speetto.db"
+DB_PATH = "data/speetto.db"
 
 def get_db():
     conn = sqlite3.connect(DB_PATH)
