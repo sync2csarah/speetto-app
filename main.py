@@ -16,14 +16,24 @@ def get_db():
 @app.get("/api/stats")
 def get_stats(game_type: str = "sp1000"):
     conn = get_db()
-    row = conn.execute("SELECT * FROM round_stats WHERE game_type=? ORDER BY round_no DESC LIMIT 1", (game_type,)).fetchone()
+    gds_type_cd = game_type.upper()
+    row = conn.execute("""
+        SELECT epsd as round_no, spmt_rt as release_rate,
+               rnk1_total as total_1st, rnk1_remain as remain_1st
+        FROM pblcn_status WHERE gds_type_cd=? ORDER BY epsd DESC LIMIT 1
+    """, (gds_type_cd,)).fetchone()
     conn.close()
     return dict(row) if row else {"error": "데이터 없음"}
 
 @app.get("/api/stats/history")
 def get_stats_history(game_type: str = "sp1000", limit: int = 10):
     conn = get_db()
-    rows = conn.execute("SELECT * FROM round_stats WHERE game_type=? ORDER BY round_no DESC LIMIT ?", (game_type, limit)).fetchall()
+    gds_type_cd = game_type.upper()
+    rows = conn.execute("""
+        SELECT epsd as round_no, spmt_rt as release_rate,
+               rnk1_total as total_1st, rnk1_remain as remain_1st
+        FROM pblcn_status WHERE gds_type_cd=? ORDER BY epsd DESC LIMIT ?
+    """, (gds_type_cd, limit)).fetchall()
     conn.close()
     return [dict(r) for r in rows]
 
@@ -99,6 +109,51 @@ def get_top_stores(game_type: str = "sp1000", limit: int = 20):
     """, (game_type, limit)).fetchall()
     conn.close()
     return [dict(r) for r in rows]
+
+@app.get("/api/pblcn/status")
+def get_pblcn_status(game_type: str = "sp1000"):
+    conn = get_db()
+    gds_type_cd = game_type.upper()  # sp1000 -> SP1000
+    rows = conn.execute("""
+        SELECT * FROM pblcn_status
+        WHERE gds_type_cd=?
+        ORDER BY epsd DESC
+    """, (gds_type_cd,)).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+@app.get("/api/pblcn/alerts")
+def get_pblcn_alerts(spmt_rt_min: float = 90.0, rnk1_remain_min: int = 5):
+    conn = get_db()
+    rows = conn.execute("""
+        SELECT * FROM pblcn_status
+        WHERE spmt_rt >= ? AND rnk1_remain >= ?
+        ORDER BY spmt_rt DESC
+    """, (spmt_rt_min, rnk1_remain_min)).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+@app.get("/api/pblcn/exclusive")
+def get_pblcn_exclusive(min_index: float = 1.1, limit: int = 20):
+    conn = get_db()
+    rows = conn.execute("""
+        SELECT * FROM pblcn_status
+        WHERE rnk1_total > 0 AND rnk3_total > 0 AND ntsl_status='판매중'
+    """).fetchall()
+    conn.close()
+
+    results = []
+    for r in rows:
+        row = dict(r)
+        rnk1_ratio = row["rnk1_remain"] / row["rnk1_total"] if row["rnk1_total"] else 0
+        rnk3_ratio = row["rnk3_remain"] / row["rnk3_total"] if row["rnk3_total"] else 0
+        concentration = (rnk1_ratio / rnk3_ratio) if rnk3_ratio > 0 else None
+        if concentration and concentration >= min_index:
+            row["concentration_index"] = round(concentration, 2)
+            results.append(row)
+
+    results.sort(key=lambda x: x["concentration_index"], reverse=True)
+    return results[:limit]
 
 if __name__ == "__main__":
     import uvicorn
