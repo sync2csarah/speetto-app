@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-const API_BASE = "http://localhost:8000";
+const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:8000";
 const ALL_REGIONS = ["서울","경기","인천","강원","충북","충남","대전","세종","전북","전남","광주","경북","대구","경남","부산","울산","제주"];
 
 export default function RegionDashboard({ gameType = "sp1000" }) {
