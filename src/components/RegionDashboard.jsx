@@ -46,18 +46,24 @@ export default function RegionDashboard({ gameType = "sp1000" }) {
     } catch (e) { console.error(e); }
   };
 
-  const remain = stats ? stats.remain_1st : 0;
-  const wonPct = stats && stats.total_1st ? Math.round(((stats.total_1st - stats.remain_1st) / stats.total_1st) * 100) : 0;
+  // 회차 선택 드롭다운 옵션이 history 배열에서 나오므로, 선택된 회차의 통계도
+  // 항상 history 안에서 찾을 수 있다. 못 찾을 때만(최초 로딩 등) stats로 대체한다.
+  const selectedStats = history.find((h) => h.round_no === selectedRound) || stats;
+
+  const remain = selectedStats ? selectedStats.remain_1st : 0;
+  const wonPct = selectedStats && selectedStats.total_1st
+    ? Math.round(((selectedStats.total_1st - selectedStats.remain_1st) / selectedStats.total_1st) * 100)
+    : 0;
 
   return (
     <div style={{ fontFamily: "sans-serif", padding: "1rem 0" }}>
-      {stats && (
+      {selectedStats && (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(130px,1fr))", gap: 10, marginBottom: 20 }}>
           {[
-            { label: "전국 출고율", value: `${stats.release_rate || "-"}%` },
-            { label: "1등 총 발행", value: `${stats.total_1st || "-"}장` },
-            { label: "1등 지급완료", value: `${(stats.total_1st - stats.remain_1st) || "-"}장 (${wonPct}%)` },
-            { label: "1등 잔여", value: `${stats.remain_1st || "-"}장`, color: "#D85A30" },
+            { label: "전국 출고율", value: `${selectedStats.release_rate || "-"}%` },
+            { label: "1등 총 발행", value: `${selectedStats.total_1st || "-"}장` },
+            { label: "1등 지급완료", value: `${(selectedStats.total_1st - selectedStats.remain_1st) || "-"}장 (${wonPct}%)` },
+            { label: "1등 잔여", value: `${selectedStats.remain_1st || "-"}장`, color: "#D85A30" },
           ].map((m) => (
             <div key={m.label} style={{ background: "#f5f5f3", borderRadius: 8, padding: "12px 14px" }}>
               <div style={{ fontSize: 11, color: "#888", marginBottom: 4 }}>{m.label}</div>
