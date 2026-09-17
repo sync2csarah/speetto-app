@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 
-const API_BASE = "http://localhost:8000";
+ const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:8000";
 const KAKAO_KEY = "42f5de9e8cadb02a1a500b7ecb9d0884";
 
 export default function StoreMap({ gameType = "sp1000" }) {
