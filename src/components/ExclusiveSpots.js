@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-const API_BASE = "http://localhost:8000";
+ const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:8000";
 
 function getBadge(index) {
   if (index >= 2.0) return { emoji: "🔥🔥", label: "초특급 명당", color: "#C0392B", bg: "#FDECEA" };
